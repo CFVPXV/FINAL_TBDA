@@ -2,26 +2,24 @@ from pyspark.sql import SparkSession
 from pyspark import SparkContext
 import pyspark.sql as spark
 
-sc = SparkContext()
+spark = SparkSession.builder.appName('cluster').getOrCreate()
+
+sc = spark.sparkContext
 
 text_file = sc.textFile("String_data.txt")
 
-"""
-with open("String_data.txt", "r") as f:
-    inter = f.read()
-    stringly = ''.join(inter.splitlines())
+out = text_file.flatMap(
+    lambda x: [x[i:i+3] for i in range(len(x)-2)]
+    ).map(
+        lambda x: (x, 1)
+        ).reduceByKey(
+            lambda x, y: x + y
+            ).sortByKey(True, 1)
 
-print(stringly)
+out_df = out.toDF()
 
-dat = [stringly]
+out_rdd = out.collect()
 
-rdd = spark.sparkContext.parallelize(dat)
+out_df.show()
 
-length = len(stringly)
-
-print(length)
-"""
-
-out = text_file.flatMap(lambda x: [x[i:i+3] for i in range(len(x)-2)]).map(lambda x: (x, 1)).reduceByKey(lambda x, y: x + y).collect()
-
-print(out)
+print(out_rdd)
